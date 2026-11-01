@@ -1,5 +1,5 @@
 # =====================================================================
-# AutoYou2Face - Complete Setup Guide & Configuration
+# AutoYou2Face - Configuration & Complete Setup Guide
 # Copyright (c) 2026 Hubstinacy / Grégory Hubin (aka The Nasty Mariol)
 # All Rights Reserved.
 # =====================================================================
@@ -9,47 +9,54 @@
 # it directly to your Facebook Page every 30 minutes via GitHub Actions.
 #
 # =====================================================================
-# 📋 STEP 1: OBTAIN YOUR 4 SECRET KEYS
+# 📋 STEP-BY-STEP GUIDE TO OBTAIN YOUR 4 SECRET KEYS
 # =====================================================================
 #
 # 🔑 1. YOUTUBE_API_KEY
-#    1. Go to the Google Cloud Console: https://console.cloud.google.com
-#    2. Create a new project or select an existing one.
-#    3. Navigate to "APIs & Services" > "Library".
-#    4. Search for "YouTube Data API v3" and click "Enable".
-#    5. Go to "APIs & Services" > "Credentials".
-#    6. Click "Create Credentials" > "API key".
-#    7. Copy your generated API key.
+#    1. Go to Google Cloud Console: https://console.cloud.google.com
+#    2. Log in with the Google account associated with your YouTube channel.
+#    3. Click on the project selector at the top left and select "New Project".
+#    4. Name your project (e.g., "AutoYou2Face-Project") and click "Create".
+#    5. Navigate to "APIs & Services" > "Library".
+#    6. Search for "YouTube Data API v3" and click "Enable".
+#    7. Go to "APIs & Services" > "Credentials".
+#    8. Click "+ Create Credentials" at the top and select "API key".
+#    9. Copy the generated API key (format: AIzaSy...).
 #
 # 🔑 2. YOUTUBE_CHANNEL_ID
-#    1. Log in to your YouTube account.
-#    2. Go to Advanced Settings: https://www.youtube.com/account_advanced
-#    3. Copy the value listed under "Channel ID" (format: UCxxxxxxxxxxxx).
+#    1. Log in to your YouTube account on a web browser.
+#    2. Go directly to Advanced Settings: https://www.youtube.com/account_advanced
+#    3. Locate the "Channel ID" field.
+#    4. Copy the value (starts with "UC...", e.g., UCxxxxxxxxxxxxxxxxxxxxxx).
 #
 # 🔑 3. META_ACCESS_TOKEN (Facebook Page Access Token)
 #    1. Go to Meta Graph API Explorer: https://developers.facebook.com/tools/explorer
-#    2. Select your Meta Application and target Facebook Page.
-#    3. Under "Permissions", add the following permissions:
+#    2. Log in with the Facebook account that administers your Page.
+#    3. In the right panel, select your Meta App under "Meta App".
+#    4. Under "User or Page", choose "Get Page Access Token" and select your target Facebook Page.
+#    5. Under "Permissions", add the following 3 permissions:
 #       - pages_read_engagement
 #       - pages_show_list
 #       - pages_manage_posts
-#    4. Click "Generate Access Token" and accept the permission prompts.
-#    5. (Recommended) Convert this temporary token into a Long-Lived Token 
-#       using the Meta Access Token Tool to prevent weekly expirations.
+#    6. Click the blue "Generate Access Token" button and accept the authorization prompts.
+#    7. Copy the generated long string.
+#    8. (Recommended) Convert this token into a Long-Lived Token using the Access Token Debugger tool
+#       (https://developers.facebook.com/tools/debug/accesstoken) to prevent weekly expirations.
 #
 # 🔑 4. FB_PAGE_ID
-#    1. Go to your Facebook Page.
-#    2. Navigate to the "About" section > "Page information" (or check your URL).
-#    3. Copy the numerical ID of your page (e.g., 100123456789).
+#    1. Log in to Facebook and switch to your Facebook Page profile.
+#    2. Go to the "About" section > "Page information" (or Settings > Page settings).
+#    3. Locate the "Page ID" field.
+#    4. Copy the numerical ID (e.g., 100123456789).
 #
 # =====================================================================
-# ⚙️ STEP 2: CONFIGURE GITHUB ACTIONS (AUTOMATED EXECUTION)
+# ⚙️ METHOD A: CONFIGURE GITHUB ACTIONS VIA WEB INTERFACE
 # =====================================================================
 #
-# 1. Fork or push this repository to your personal GitHub account.
-# 2. Open your repository on GitHub.
-# 3. Go to "Settings" > "Secrets and variables" > "Actions".
-# 4. Click "New repository secret" and add the following 4 secrets:
+# 1. Open your repository on GitHub (https://github.com/YOUR_USERNAME/AutoYou2Face).
+# 2. Click on the "Settings" tab in the top menu bar.
+# 3. In the left sidebar, click on "Secrets and variables" > "Actions".
+# 4. Click the green "New repository secret" button and add all 4 secrets:
 #
 #    Name: YOUTUBE_API_KEY      | Value: <your_youtube_api_key>
 #    Name: YOUTUBE_CHANNEL_ID   | Value: <your_channel_id>
@@ -57,21 +64,47 @@
 #    Name: FB_PAGE_ID           | Value: <your_facebook_page_id>
 #
 # 5. Enable Write Permissions for GitHub Actions:
-#    - Go to "Settings" > "Actions" > "General".
+#    - In the left sidebar under "Settings", go to "Actions" > "General".
 #    - Scroll down to "Workflow permissions".
 #    - Select "Read and write permissions".
 #    - Click "Save".
 #
-# 6. Enable the Workflow:
-#    - Click on the "Actions" tab in your repository.
-#    - Click "AutoYou2Face Publisher" and click "Run workflow" to test it.
-#    - The script will now run automatically every 30 minutes!
+# 6. Test Your Setup:
+#    - Go to the "Actions" tab at the top of your repository.
+#    - Select "AutoYou2Face Publisher" from the left menu.
+#    - Click "Run workflow" > "Run workflow" to trigger the initial test.
+#    - The workflow will now execute automatically every 30 minutes!
 #
 # =====================================================================
-# 💻 LOCAL EXECUTION CONFIGURATION (OPTIONAL)
+# 💻 METHOD B: CONFIGURE GITHUB ACTIONS VIA CLI (gh)
 # =====================================================================
-# If running locally on your computer instead of GitHub Actions, rename 
-# this file to "config.txt" and fill in your credentials below:
+#
+# If you are using GitHub Codespaces or a local terminal with the GitHub CLI installed:
+#
+# 1. Authenticate with GitHub:
+#    gh auth login
+#
+# 2. Navigate to your repository directory:
+#    cd AutoYou2Face
+#
+# 3. Set all 4 secrets in one step:
+#    gh secret set YOUTUBE_API_KEY --body "YOUR_YOUTUBE_API_KEY"
+#    gh secret set YOUTUBE_CHANNEL_ID --body "YOUR_YOUTUBE_CHANNEL_ID"
+#    gh secret set META_ACCESS_TOKEN --body "YOUR_META_ACCESS_TOKEN"
+#    gh secret set FB_PAGE_ID --body "YOUR_FB_PAGE_ID"
+#
+# 4. Verify your configured secrets:
+#    gh secret list
+#
+# 5. Trigger the first workflow run immediately:
+#    gh workflow run auto_post.yml
+#    gh run watch
+#
+# =====================================================================
+# 🛠 LOCAL EXECUTION CONFIGURATION (OPTIONAL)
+# =====================================================================
+# If running the Python script locally on your machine instead of 
+# GitHub Actions, rename this file to "config.txt" and enter your keys below:
 
 YOUTUBE_API_KEY=
 YOUTUBE_CHANNEL_ID=
