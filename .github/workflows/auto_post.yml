@@ -2,8 +2,8 @@ name: AutoYou2Face Publisher
 
 on:
   schedule:
-    - cron: '0 * * * *'  # S'exécute chaque heure
-  workflow_dispatch:     # Permet le lancement manuel
+    - cron: '*/30 * * * *'  # S'exécute toutes les 30 minutes
+  workflow_dispatch:        # Permet le lancement manuel via l'application ou l'interface
 
 jobs:
   build-and-post:
