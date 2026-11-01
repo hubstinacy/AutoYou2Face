@@ -1,164 +1,103 @@
 import os
-import sys
 import json
+import random
 import requests
 
-# =====================================================================
-# AutoYou2Face - Main Script
-# Copyright (c) 2026 Hubstinacy / Grégory Hubin (aka The Nasty Mariol)
-# All Rights Reserved.
-# =====================================================================
+# 1. Chargement des identifiants (Variables d'environnement GitHub Actions ou fichier config.txt)
+YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY")
+YOUTUBE_CHANNEL_ID = os.environ.get("YOUTUBE_CHANNEL_ID")
+META_ACCESS_TOKEN = os.environ.get("META_ACCESS_TOKEN")
+FB_PAGE_ID = os.environ.get("FB_PAGE_ID")
 
-def load_credentials():
-    """
-    Charge les identifiants de manière sécurisée :
-    1. Depuis les variables d'environnement (GitHub Secrets / OS)
-    2. Depuis un fichier local 'config.txt' si disponible
-    """
-    credentials = {
-        "YOUTUBE_API_KEY": os.environ.get("YOUTUBE_API_KEY"),
-        "YOUTUBE_CHANNEL_ID": os.environ.get("YOUTUBE_CHANNEL_ID"),
-        "META_ACCESS_TOKEN": os.environ.get("META_ACCESS_TOKEN"),
-        "FB_PAGE_ID": os.environ.get("FB_PAGE_ID")
-    }
+HISTORY_FILE = "posted_videos.json"
 
-    # Si une clé manque, tentative de lecture du fichier config.txt local
-    if not all(credentials.values()) and os.path.exists("config.txt"):
-        with open("config.txt", "r", encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                if line and not line.startswith("#") and "=" in line:
-                    key, val = line.split("=", 1)
-                    key = key.strip()
-                    val = val.strip()
-                    if key in credentials and not credentials[key]:
-                        credentials[key] = val
-
-    # Vérification des clés manquantes
-    missing_keys = [k for k, v in credentials.items() if not v]
-    
-    if missing_keys:
-        print(f"❌ Configuration incomplète. Clés manquantes : {', '.join(missing_keys)}")
-        print("💡 Renseignez vos GitHub Secrets ou votre fichier config.txt.")
-        sys.exit(1)
-
-    return credentials
-
-
-def load_posted_history(filename="posted_videos.json"):
-    """Charge l'historique des vidéos déjà publiées sur Facebook."""
-    if os.path.exists(filename):
+def load_history():
+    if os.path.exists(HISTORY_FILE):
         try:
-            with open(filename, "r", encoding="utf-8") as f:
+            with open(HISTORY_FILE, "r", encoding="utf-8") as f:
                 return json.load(f)
-        except json.JSONDecodeError:
+        except Exception:
             return []
     return []
 
+def save_history(history):
+    with open(HISTORY_FILE, "w", encoding="utf-8") as f:
+        json.dump(history, f, ensure_ascii=False, indent=2)
 
-def save_posted_history(history, filename="posted_videos.json"):
-    """Enregistre la liste mise à jour des vidéos publiées."""
-    with open(filename, "w", encoding="utf-8") as f:
-        json.dump(history, f, indent=4, ensure_ascii=False)
-
-
-def get_latest_youtube_video(api_key, channel_id):
-    """Récupère les détails de la dernière vidéo publiée sur la chaîne YouTube."""
-    url = f"https://www.googleapis.com/youtube/v3/search?key={api_key}&channelId={channel_id}&part=snippet,id&order=date&maxResults=1"
-    response = requests.get(url)
+def get_channel_videos():
+    """Récupère jusqu'à 50 vidéos récentes de la chaîne YouTube."""
+    url = (
+        f"https://www.googleapis.com/youtube/v3/search"
+        f"?key={YOUTUBE_API_KEY}"
+        f"&channelId={YOUTUBE_CHANNEL_ID}"
+        f"&part=snippet,id"
+        f"&order=date"
+        f"&maxResults=50"
+        f"&type=video"
+    )
+    res = requests.get(url)
+    if res.status_code != 200:
+        print(f"❌ Erreur API YouTube: {res.status_code} - {res.text}")
+        return []
     
-    if response.status_code != 200:
-        print(f"❌ Erreur API YouTube ({response.status_code}): {response.text}")
-        return None
+    data = res.json()
+    videos = []
+    for item in data.get("items", []):
+        vid_id = item["id"].get("videoId")
+        title = item["snippet"]["title"]
+        if vid_id:
+            videos.append({"id": vid_id, "title": title})
+    return videos
 
-    data = response.json()
-    items = data.get("items", [])
+def post_to_facebook(video):
+    video_url = f"https://www.youtube.com/watch?v={video['id']}"
+    message = f"🎥 Nouvel extrait musical / Vidéo : {video['title']}\n\n👉 Regarder ici : {video_url}"
     
-    if not items:
-        print("ℹ️ Aucune vidéo trouvée sur cette chaîne YouTube.")
-        return None
-
-    latest = items[0]
-    video_id = latest.get("id", {}).get("videoId")
-    
-    if not video_id:
-        return None  # Peut être une playlist ou une chaîne
-
-    title = latest["snippet"]["title"]
-    description = latest["snippet"]["description"]
-    video_url = f"https://www.youtube.com/watch?v={video_id}"
-
-    return {
-        "id": video_id,
-        "title": title,
-        "description": description,
-        "url": video_url
-    }
-
-
-def post_to_facebook(access_token, page_id, message, link):
-    """Publie un message avec lien vers la Page Facebook via Meta Graph API."""
-    url = f"https://graph.facebook.com/v18.0/{page_id}/feed"
+    fb_url = f"https://graph.facebook.com/v18.0/{FB_PAGE_ID}/feed"
     payload = {
         "message": message,
-        "link": link,
-        "access_token": access_token
+        "link": video_url,
+        "access_token": META_ACCESS_TOKEN
     }
     
-    response = requests.post(url, data=payload)
-    
-    if response.status_code == 200:
-        print(f"✅ Publication réussie sur Facebook (Post ID: {response.json().get('id')})")
+    res = requests.post(fb_url, data=payload)
+    if res.status_code == 200:
+        print(f"✅ Publication réussie sur Facebook : {video['title']}")
         return True
     else:
-        print(f"❌ Erreur API Facebook ({response.status_code}): {response.text}")
+        print(f"❌ Erreur publication Facebook: {res.status_code} - {res.text}")
         return False
 
-
 def main():
-    print("🚀 [AutoYou2Face] Démarrage de l'application...")
-    print("Developed by Grégory Hubin (The Nasty Mariol) / Hubstinacy\n")
-
-    # 1. Chargement des identifiants
-    config = load_credentials()
-
-    # 2. Chargement de l'historique
-    posted_history = load_posted_history()
-
-    # 3. Récupération de la dernière vidéo YouTube
-    latest_video = get_latest_youtube_video(
-        config["YOUTUBE_API_KEY"],
-        config["YOUTUBE_CHANNEL_ID"]
-    )
-
-    if not latest_video:
-        print("▶️ Aucune nouvelle vidéo à traiter.")
-        return
-
-    video_id = latest_video["id"]
-
-    # 4. Vérification du doublon
-    if video_id in posted_history:
-        print(f"ℹ️ La vidéo '{latest_video['title']}' (ID: {video_id}) a déjà été publiée.")
-        return
-
-    # 5. Publication sur Facebook
-    print(f"📌 Nouvelle vidéo détectée : {latest_video['title']}")
-    message = f"🎵 {latest_video['title']}\n\n{latest_video['description']}"
+    print("🚀 [AutoYou2Face] Démarrage de la publication en boucle...")
     
-    success = post_to_facebook(
-        config["META_ACCESS_TOKEN"],
-        config["FB_PAGE_ID"],
-        message,
-        latest_video["url"]
-    )
+    if not all([YOUTUBE_API_KEY, YOUTUBE_CHANNEL_ID, META_ACCESS_TOKEN, FB_PAGE_ID]):
+        print("❌ Configuration incomplète. Vérifiez vos GitHub Secrets.")
+        exit(1)
 
-    # 6. Sauvegarde dans l'historique si publication réussie
-    if success:
-        posted_history.append(video_id)
-        save_posted_history(posted_history)
-        print("💾 Historique mis à jour.")
+    all_videos = get_channel_videos()
+    if not all_videos:
+        print("⚠️ Aucune vidéo disponible trouvée sur la chaîne YouTube.")
+        return
 
+    history = load_history()
+    
+    # Filtrer les vidéos non encore publiées dans ce cycle
+    unposted_videos = [v for v in all_videos if v["id"] not in history]
+
+    # Si toutes les vidéos ont déjà été publiées, on réinitialise le cycle !
+    if not unposted_videos:
+        print("🔄 Cycle terminé ! Toutes les vidéos ont été publiées. Réinitialisation du cycle...")
+        history = []
+        unposted_videos = all_videos
+
+    # Choix aléatoire d'une vidéo parmi les non publiées
+    selected_video = random.choice(unposted_videos)
+    print(f"🎯 Vidéo sélectionnée au hasard : {selected_video['title']} (ID: {selected_video['id']})")
+
+    if post_to_facebook(selected_video):
+        history.append(selected_video["id"])
+        save_history(history)
 
 if __name__ == "__main__":
     main()
