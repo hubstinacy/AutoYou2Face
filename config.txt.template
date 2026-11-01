@@ -1,0 +1,32 @@
+# =====================================================================
+# AutoYou2Face - Configuration File
+# Copyright (c) 2026 Hubstinacy / Grégory Hubin (aka The Nasty Mariol)
+# All Rights Reserved.
+# =====================================================================
+#
+# 📋 STEP-BY-STEP SETUP & CONFIGURATION GUIDE:
+#
+# --- OPTION A: USING GITHUB ACTIONS (RECOMMENDED) ---
+# 1. Fork or clone this repository to your GitHub account.
+# 2. On your repository, go to: Settings > Secrets and variables > Actions.
+# 3. Add the following 4 secrets by clicking "New repository secret":
+#    - YOUTUBE_API_KEY      : Your YouTube Data API v3 key (Google Cloud Console)
+#    - YOUTUBE_CHANNEL_ID   : Your YouTube Channel ID (e.g., UCxxxxxx)
+#    - META_ACCESS_TOKEN    : Your Facebook Page Access Token (Meta Graph API Explorer)
+#    - FB_PAGE_ID           : Your numeric Facebook Page ID
+# 4. Enable write permissions for history tracking:
+#    Go to Settings > Actions > General > Workflow permissions
+#    Select "Read and write permissions" and click "Save".
+# 5. Start the automation under the "Actions" tab > "Run workflow".
+#
+# --- OPTION B: LOCAL USE (PYTHON ON PC OR SERVER) ---
+# 1. Rename this "config.txt.template" file to "config.txt".
+# 2. Replace the values below with your own credentials.
+# 3. Run the script using: python auto_post.py
+#
+# =====================================================================
+
+YOUTUBE_API_KEY=YOUR_YOUTUBE_API_KEY
+YOUTUBE_CHANNEL_ID=YOUR_YOUTUBE_CHANNEL_ID
+META_ACCESS_TOKEN=YOUR_FACEBOOK_PAGE_ACCESS_TOKEN
+FB_PAGE_ID=YOUR_NUMERIC_FACEBOOK_PAGE_ID
