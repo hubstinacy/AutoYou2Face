@@ -11,6 +11,28 @@ FB_PAGE_ID = os.environ.get("FB_PAGE_ID")
 
 HISTORY_FILE = "posted_videos.json"
 
+# 5 tags toujours présents sur chaque post
+CORE_TAGS = ["#thenastymariol", "#nastymariol", "#electronic", "#music", "#techno"]
+
+# Réservoir de tags pour la rotation aléatoire (9 piochés à chaque fois = 14 au total)
+TAGS_POOL = [
+    "#new", "#underground", "#composer", "#authentic", "#original",
+    "#sequencer", "#daw", "#reason", "#indie", "#freedom",
+    "#seraing", "#liege", "#ibiza", "#berlin", "#london",
+    "#Amsterdam", "#Paris", "#Koln", "#europa", "#europe",
+    "#belgique", "#belgium", "#usa", "#canada", "#southamerica",
+    "#asia", "#love", "#arts", "#world", "#passion",
+    "#dance", "#fun", "#detroit", "#clubs", "#djs",
+    "#party", "#dancefloor", "#festivals", "#goodness", "#honesty",
+    "#respect"
+]
+
+def generate_hashtags(num_random=9):
+    """Combine les 5 tags fixes avec 9 tags aléatoires pour un total de 14 hashtags."""
+    selected_random = random.sample(TAGS_POOL, min(num_random, len(TAGS_POOL)))
+    all_tags = CORE_TAGS + selected_random
+    return " ".join(all_tags)
+
 def load_history():
     if os.path.exists(HISTORY_FILE):
         try:
@@ -51,7 +73,12 @@ def get_channel_videos():
 
 def post_to_facebook(video):
     video_url = f"https://www.youtube.com/watch?v={video['id']}"
-    message = f"🎥 Nouvel extrait musical / Vidéo : {video['title']}\n\n👉 Regarder ici : {video_url}"
+    hashtags = generate_hashtags(9)
+    message = (
+        f"🎥 Nouvel extrait musical / Vidéo : {video['title']}\n\n"
+        f"👉 Regarder ici : {video_url}\n\n"
+        f"{hashtags}"
+    )
     
     fb_url = f"https://graph.facebook.com/v18.0/{FB_PAGE_ID}/feed"
     payload = {
@@ -63,6 +90,7 @@ def post_to_facebook(video):
     res = requests.post(fb_url, data=payload)
     if res.status_code == 200:
         print(f"✅ Publication réussie sur Facebook : {video['title']}")
+        print(f"🏷️ Tags utilisés (14) : {hashtags}")
         return True
     else:
         print(f"❌ Erreur publication Facebook: {res.status_code} - {res.text}")
